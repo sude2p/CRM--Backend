@@ -1,0 +1,63 @@
+services:
+  crm-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app  # Mount the root directory
+    ports:
+      - "8001:8000"
+    environment:
+      - CLOUDAMPURL = ${CLOUDAMPURL}
+      - DB_NAME = ${DB_NAME}
+      - DB_USER = ${DB_USER}
+      - DB_PASSWORD = ${DB_PASSWORD}
+      - DB_HOST = ${DB_HOST}
+      - IS_GITHUB = ${IS_GITHUB}
+      - SECRET_KEY = ${SECRET_KEY}
+      - SECRET_KEY_AUTH = ${SECRET_KEY_AUTH}
+      - FIELD_ENCRYPTION_KEY = ${FIELD_ENCRYPTION_KEY}
+    networks:
+      - crm-network
+    depends_on:
+      - crm-db 
+
+  crm-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    command: ["python", "manage.py", "start_listner"]
+    environment:
+      - CLOUDAMPURL = ${CLOUDAMPURL}
+      - DB_NAME = ${DB_NAME}
+      - DB_USER = ${DB_USER}
+      - DB_PASSWORD = ${DB_PASSWORD}
+      - DB_HOST = ${DB_HOST}
+      - IS_GITHUB = ${IS_GITHUB}
+      - SECRET_KEY = ${SECRET_KEY}
+      - SECRET_KEY_AUTH = ${SECRET_KEY_AUTH}
+      - FIELD_ENCRYPTION_KEY = ${FIELD_ENCRYPTION_KEY}
+    depends_on:
+      - crm-db
+    networks:
+      - crm-network
+
+  crm-db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    networks:
+      - crm-network
+
+volumes:
+  postgres_data:
+
+networks:
+  crm-network:
+    external: true
